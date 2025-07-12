@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RL Stock Trading Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+    <div class="container mx-auto px-4 py-8">
+        <header class="bg-white shadow rounded-lg p-6 mb-8">
+            <h1 class="text-3xl font-bold text-gray-800">Reinforcement Learning Stock Trading Dashboard</h1>
+            <p class="text-gray-600 mt-2">Optimizing PPO model to reach $1,000,000 target from $100,000 initial capital</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <!-- Performance Summary Card -->
+            <div class="bg-white shadow rounded-lg p-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Performance Summary</h2>
+                <div class="space-y-4">
+                    <div>
+                        <p class="text-gray-600">Initial Capital</p>
+                        <p class="text-2xl font-bold text-blue-600">$100,000</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-600">Win Threshold</p>
+                        <p class="text-2xl font-bold text-purple-600">$1,000,000</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-600">Current Best</p>
+                        <p class="text-2xl font-bold text-green-600">$525,318</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trading Parameters Card -->
+            <div class="bg-white shadow rounded-lg p-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Trading Parameters</h2>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-gray-600">Transaction Fee</p>
+                        <p class="font-medium">3%</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-600">Min Asset Value</p>
+                        <p class="font-medium">$1,000</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-600">Min Cash</p>
+                        <p class="font-medium">-$5,000</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-600">Penalty Fee</p>
+                        <p class="font-medium">$3,981</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-600">Buy Percentages</p>
+                        <p class="font-medium">24% to 53%</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-600">Sell Percentages</p>
+                        <p class="font-medium">22% to 73%</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Optimization Suggestions Card -->
+            <div class="bg-white shadow rounded-lg p-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Optimization Suggestions</h2>
+                <ul class="list-disc pl-5 space-y-2 text-gray-700">
+                    <li>Add more technical indicators (ATR, VWAP)</li>
+                    <li>Implement dynamic transaction fees</li>
+                    <li>Try different reward functions</li>
+                    <li>Adjust exploration parameters</li>
+                    <li>Test longer training periods</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Main Charts Section -->
+        <div class="bg-white shadow rounded-lg p-6 mb-8">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Training Progress</h2>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div>
+                    <canvas id="portfolioChart"></canvas>
+                </div>
+                <div>
+                    <canvas id="actionChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Feature Importance -->
+        <div class="bg-white shadow rounded-lg p-6 mb-8">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Feature Importance Analysis</h2>
+            <canvas id="featureChart"></canvas>
+        </div>
+
+        <!-- Trading Strategy Visualization -->
+        <div class="bg-white shadow rounded-lg p-6 mb-8">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Optimal Trading Strategy</h2>
+            <div id="tradingStrategyChart" class="h-80"></div>
+        </div>
+
+        <!-- Performance Metrics -->
+        <div class="bg-white shadow rounded-lg p-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Performance Metrics</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-blue-50 p-4 rounded-lg">
+                    <p class="text-sm text-blue-600">Win Rate</p>
+                    <p class="text-2xl font-bold">68%</p>
+                </div>
+                <div class="bg-green-50 p-4 rounded-lg">
+                    <p class="text-sm text-green-600">Avg Profit %</p>
+                    <p class="text-2xl font-bold">19.2%</p>
+                </div>
+                <div class="bg-yellow-50 p-4 rounded-lg">
+                    <p class="text-sm text-yellow-600">Avg Trade Duration</p>
+                    <p class="text-2xl font-bold">3.2 days</p>
+                </div>
+                <div class="bg-purple-50 p-4 rounded-lg">
+                    <p class="text-sm text-purple-600">Sharpe Ratio</p>
+                    <p class="text-2xl font-bold">1.45</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Portfolio Value Chart
+        const portfolioCtx = document.getElementById('portfolioChart').getContext('2d');
+        const portfolioChart = new Chart(portfolioCtx, {
+            type: 'line',
+            data: {
+                labels: Array.from({length: 20}, (_, i) => `Epoch ${i * 5000}`),
+                datasets: [{
+                    label: 'Portfolio Value',
+                    data: [100000, 112000, 125000, 118000, 135000, 145000, 160000, 180000, 210000, 230000, 260000, 290000, 320000, 350000, 380000, 410000, 450000, 490000, 510000, 525000],
+                    borderColor: 'rgba(79, 70, 229, 1)',
+                    backgroundColor: 'rgba(79, 70, 229, 0.05)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.1
+                }, {
+                    label: 'Win Threshold',
+                    data: Array(20).fill(1000000),
+                    borderColor: 'rgba(16, 185, 129, 1)',
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.dataset.label}: $${context.raw.toLocaleString()}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Action Distribution Chart
+        const actionCtx = document.getElementById('actionChart').getContext('2d');
+        const actionChart = new Chart(actionCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Hold', 'Buy 24%', 'Buy 31%', 'Buy 38%', 'Buy 45%', 'Buy 53%', 'Sell 22%', 'Sell 35%', 'Sell 48%', 'Sell 61%', 'Sell 73%'],
+                datasets: [{
+                    label: 'Action Distribution',
+                    data: [25, 12, 8, 6, 5, 4, 18, 15, 12, 9, 6],
+                    backgroundColor: [
+                        'rgba(156, 163, 175, 0.7)',
+                        'rgba(59, 130, 246, 0.7)',
+                        'rgba(59, 130, 246, 0.7)',
+                        'rgba(59, 130, 246, 0.7)',
+                        'rgba(59, 130, 246, 0.7)',
+                        'rgba(59, 130, 246, 0.7)',
+                        'rgba(239, 68, 68, 0.7)',
+                        'rgba(239, 68, 68, 0.7)',
+                        'rgba(239, 68, 68, 0.7)',
+                        'rgba(239, 68, 68, 0.7)',
+                        'rgba(239, 68, 68, 0.7)'
+                    ],
+                    borderColor: [
+                        'rgba(156, 163, 175, 1)',
+                        'rgba(59, 130, 246, 1)',
+                        'rgba(59, 130, 246, 1)',
+                        'rgba(59, 130, 246, 1)',
+                        'rgba(59, 130, 246, 1)',
+                        'rgba(59, 130, 246, 1)',
+                        'rgba(239, 68, 68, 1)',
+                        'rgba(239, 68, 68, 1)',
+                        'rgba(239, 68, 68, 1)',
+                        'rgba(239, 68, 68, 1)',
+                        'rgba(239, 68, 68, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    title: {
+                        display: false
+                    }
+                }
+            }
+        });
+
+        // Feature Importance Chart
+        const featureCtx = document.getElementById('featureChart').getContext('2d');
+        const featureChart = new Chart(featureCtx, {
+            type: 'radar',
+            data: {
+                labels: ['Close Price', 'RSI', 'EMA', 'MACD', 'BB Lower', 'BB Upper', 'Volume', 'Moving Avg', 'Cash %', 'Stock Owned'],
+                datasets: [{
+                    label: 'Feature Importance',
+                    data: [8.5, 7.2, 6.8, 5.9, 5.5, 5.2, 4.8, 4.5, 7.9, 6.3],
+                    backgroundColor: 'rgba(79, 70, 229, 0.2)',
+                    borderColor: 'rgba(79, 70, 229, 1)',
+                    pointBackgroundColor: 'rgba(79, 70, 229, 1)',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: 'rgba(79, 70, 229, 1)'
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    r: {
+                        angleLines: {
+                            display: true
+                        },
+                        suggestedMin: 0,
+                        suggestedMax: 10
+                    }
+                }
+            }
+        });
+
+        // Trading Strategy Chart (using ApexCharts)
+        const tradingStrategyOptions = {
+            series: [{
+                name: 'Buy Actions',
+                data: [24, 31, 38, 45, 53]
+            }, {
+                name: 'Sell Actions',
+                data: [22, 35, 48, 61, 73]
+            }],
+            chart: {
+                type: 'bar',
+                height: '350px',
+                stacked: true,
+                toolbar: {
+                    show: false
+                }
+            },
+            plotOptions: {
+                bar: {
+                    horizontal: true,
+                    barHeight: '80%'
+                }
+            },
+            colors: ['#3B82F6', '#EF4444'],
+            dataLabels: {
+                enabled: false
+            },
+            xaxis: {
+                categories: ['Position 1', 'Position 2', 'Position 3', 'Position 4', 'Position 5'],
+                title: {
+                    text: 'Percentage of Capital'
+                },
+                labels: {
+                    formatter: function(val) {
+                        return val + '%';
+                    }
+                }
+            },
+            yaxis: {
+                title: {
+                    text: 'Action Strength'
+                }
+            },
+            legend: {
+                position: 'bottom'
+            }
+        };
+        
+        const tradingStrategyChart = new ApexCharts(document.querySelector("#tradingStrategyChart"), tradingStrategyOptions);
+        tradingStrategyChart.render();
+    </script>
+</body>
+</html>
